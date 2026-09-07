@@ -19,3 +19,23 @@ terraform {
   }
 }
 ```
+
+## Terraform Workspaces
+
+This project uses two workspaces: `default` and `dev`.
+
+### Common workspace commands
+
+```bash
+# List all workspaces (the active one is marked with *)
+terraform workspace list
+
+# Show the current workspace
+terraform workspace show
+
+# Switch to the dev workspace
+terraform workspace select dev
+
+# Switch back to the default workspace
+terraform workspace select default
+```
