@@ -1,0 +1,160 @@
+
+Imperative commands:
+
+a.List the given namespaces:
+kubectl get namespaces
+
+b.Creating namespace:
+kubectl create namespace <namespace name>
+
+c.Describe namespace:
+kubectl describe namespace <name>
+
+
+
+Declarative commands: (https://kubernetes.io/docs/tasks/administer-cluster/namespaces/)
+
+Creating namespaces:
+
+Create a new file :
+
+vim namespace.yaml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: <insert-namespace-name-here>
+
+a.Create namespace using the below command:
+kubectl apply -f namespace.yaml
+
+b.Delete the namespace:
+kubectl delete namespace <namespace name>
+
+
+Resource Quotas:
+
+Ref:https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/quota-memory-cpu-namespace/
+
+1. Configure Memory and CPU Quotas for a Namespace
+
+a. Create a namespace:
+
+kubectl create namespace quota-mem-cpu-example
+
+b. Create quota.yaml file:
+
+vim quota.yaml
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: mem-cpu-demo
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    limits.cpu: "2"
+    limits.memory: 2Gi
+
+c.Create the resource quota:
+
+kubectl apply -f quota.yaml --namespace=quota-mem-cpu-example
+
+
+d.View detailed information about Resource Quota:
+kubectl get resourcequota mem-cpu-demo --namespace=quota-mem-cpu-example --output=yaml
+
+
+The ResourceQuota places these requirements on the quota-mem-cpu-example namespace:
+
+Every Container must have a memory request, memory limit, cpu request, and cpu limit.
+The memory request total for all Containers must not exceed 1 GiB.
+The memory limit total for all Containers must not exceed 2 GiB.
+The CPU request total for all Containers must not exceed 1 cpu.
+The CPU limit total for all Containers must not exceed 2 cpu.
+
+
+
+e. Create pod.yaml for creating a a new Pod:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: quota-mem-cpu-demo
+spec:
+  containers:
+  - name: quota-mem-cpu-demo-ctr
+    image: nginx
+    resources:
+      limits:
+        memory: "800Mi"
+        cpu: "800m"
+      requests:
+        memory: "600Mi"
+        cpu: "400m"
+
+ 
+f.Create the pod:
+kubectl apply -f pod.yaml --namespace=quota-mem-cpu-example
+
+g.Verify that the Pod's Container is running:
+kubectl get pod quota-mem-cpu-demo --namespace=quota-mem-cpu-example
+
+h.Once again, view detailed information about the ResourceQuota:
+
+kubectl get resourcequota mem-cpu-demo --namespace=quota-mem-cpu-example --output=yaml
+
+The output shows the quota along with how much of the quota has been used. You can see that the memory and CPU requests and limits for your Pod do not exceed the quota.
+
+status:
+  hard:
+    limits.cpu: "2"
+    limits.memory: 2Gi
+    requests.cpu: "1"
+    requests.memory: 1Gi
+  used:
+    limits.cpu: 800m
+    limits.memory: 800Mi
+    requests.cpu: 400m
+    requests.memory: 600Mi
+
+i.Attempt to create a new pod using pod1.yaml:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: quota-mem-cpu-demo-2
+spec:
+  containers:
+  - name: quota-mem-cpu-demo-2-ctr
+    image: redis
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "800m"
+      requests:
+        memory: "700Mi"
+        cpu: "400m"
+
+j.Attempt to create the Pod:
+
+kubectl apply -f pod1.yaml --namespace=quota-mem-cpu-example
+
+Pod will not get created with the below message:
+
+Error from server (Forbidden): error when creating "examples/admin/resource/quota-mem-cpu-pod-2.yaml":
+pods "quota-mem-cpu-demo-2" is forbidden: exceeded quota: mem-cpu-demo,
+requested: requests.memory=700Mi,used: requests.memory=600Mi, limited: requests.memory=1Gi
+
+
+
+Lab 2: https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/quota-pod-namespace/
+
+
+
+
+
+
+
+

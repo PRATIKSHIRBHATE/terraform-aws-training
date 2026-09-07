@@ -1,0 +1,5 @@
+https://aws.amazon.com/what-is/retrieval-augmented-generation/
+
+What is RAG?
+
+https://youtu.be/T-D1OfcDW1M

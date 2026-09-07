@@ -1,0 +1,302 @@
+
+Task 1:
+
+Imperative :
+
+1 Expose backend pod using backend service which has label role=backend
+kubectl run backend --image=nginx --labels role=backend --expose --port=80
+
+2.Check if the pods has been created
+root@master:~# kubectl get pods -o wide
+NAME      READY   STATUS    RESTARTS   AGE   IP          NODE      NOMINATED NODE   READINESS GATES
+backend   1/1     Running   0          5m    10.44.0.2   worker1   <none>           <none>
+
+3.Check if service has been created
+root@master:~# kubectl get svc backend -o wide
+NAME      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE     SELECTOR
+backend   ClusterIP   10.98.137.127   <none>        80/TCP    5m31s   role=backend
+
+4. Describe the service details
+
+root@master:~# kubectl describe svc backend
+Name:              backend
+Namespace:         default
+Labels:            role=backend
+Annotations:       <none>
+Selector:          role=backend
+Type:              ClusterIP
+IP Family Policy:  SingleStack
+IP Families:       IPv4
+IP:                10.98.137.127
+IPs:               10.98.137.127
+Port:              <unset>  80/TCP
+TargetPort:        80/TCP
+Endpoints:         10.44.0.2:80
+Session Affinity:  None
+Events:            <none>
+
+5.Access the service vip from master and worker nodes
+
+root@master:~# curl  10.98.137.127
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+
+root@worker1:~# curl 10.98.137.127
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+
+
+root@worker2:~# curl 10.98.137.127
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+
+
+
+Task2:
+
+Adding a Single Pod to Cluster IP Service using YAML files
+
+1.Create a deployment from the following configuration
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx-ctr
+        image: nginx:1.15.4
+        ports:
+        - containerPort: 80
+
+
+2.Deploy the application
+
+kubectl create -f deploy2.yaml
+
+
+3.Create a clusterIP service for the above-created deployment
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+  labels:
+    app: nginx
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: nginx
+
+4.Deploy the service
+
+kubectl create -f cservice.yaml
+
+5.Get the list of services:
+
+kubectl get svc
+
+NAME         CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes   10.0.0.1     <none>        443/TCP   1h
+nginx-svc    10.0.0.134   <none>        80/TCP    8s
+
+6.Check the details of the pod which got created
+
+[root@k8s-master ~]# kubectl get pods -o wide
+NAME                               READY   STATUS      RESTARTS   AGE    IP          NODE           NOMINATED NODE   READINESS GATES
+nginx-deployment-fb8fd69d5-gt9zm   1/1     Running     0          16m    10.32.0.2   worker-node1   <none>           <none>
+
+7.Check the service details and observe if pod ip has been mapped to service
+
+kubectl describe svc:
+[root@k8s-master ~]# kubectl describe svc nginx-svc
+Name:              nginx-svc
+Namespace:         default
+Labels:            app=nginx
+Annotations:       <none>
+Selector:          app=nginx
+Type:              ClusterIP
+IP:                10.108.227.18
+Port:              <unset>  80/TCP
+TargetPort:        80/TCP
+Endpoints:         10.32.0.2:80
+Session Affinity:  None
+
+
+Task 2 :Scaleup Pods
+
+1. Scale the deployment to 3 replicas
+
+[root@k8s-master ~]# kubectl scale deployment nginx-deployment --replicas=3
+deployment.apps/nginx-deployment scaled
+
+2.Check the service details and observe if new pods ip has been mapped to service
+
+[root@k8s-master ~]# kubectl describe svc nginx-svc
+Name:              nginx-svc
+Namespace:         default
+Labels:            app=nginx
+Annotations:       <none>
+Selector:          app=nginx
+Type:              ClusterIP
+IP:                10.108.227.18
+Port:              <unset>  80/TCP
+TargetPort:        80/TCP
+Endpoints:         10.32.0.2:80,10.32.0.4:80,10.32.0.5:80
+Session Affinity:  None
+
+3.Observe the details of pods
+
+[root@k8s-master ~]# kubectl get pods -o wide
+NAME                               READY   STATUS      RESTARTS   AGE    IP          NODE           NOMINATED NODE   READINESS GATES
+hello-1590846060-cjqkp             0/1     Completed   0          3m7s   10.32.0.3   worker-node1   <none>           <none>
+hello-1590846120-qk27c             0/1     Completed   0          2m7s   10.32.0.4   worker-node1   <none>           <none>
+hello-1590846180-68dl7             0/1     Completed   0          67s    10.32.0.6   worker-node1   <none>           <none>
+hello-1590846240-6kwrg             0/1     Completed   0          7s     10.32.0.6   worker-node1   <none>           <none>
+nginx-deployment-fb8fd69d5-gt9zm   1/1     Running     0          16m    10.32.0.2   worker-node1   <none>           <none>
+nginx-deployment-fb8fd69d5-qh445   1/1     Running     0          90s    10.32.0.5   worker-node1   <none>           <none>
+nginx-deployment-fb8fd69d5-qhkd8   1/1     Running     0          90s    10.32.0.4   worker-node1   <none>           <none
+
+4. Access the worker node where the pods got created and access the pod using service . Also it would be accessible internally from other worker nodes.
+
+[root@k8s-worker-node1 ~] curl http://10.108.227.18
+
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+
+4.Delete the svc and observe what happens to the pods , it would be unreachable from the svc
+
+kubectl delete svc svcname
+
+5.Delete the deployment
+
+ kubectl delete deploy nginx-deployment
+
+
+
+
+
+

@@ -1,0 +1,105 @@
+Terraform Lab: Working with Sensitive Variables in AWS
+
+
+1. Create Working Directory
+
+mkdir terraform-aws-sensitive
+cd terraform-aws-sensitive
+
+
+2. provider.tf — Configure AWS Provider
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+
+
+3. main.tf — Create S3 Bucket & IAM Access Key
+resource "aws_s3_bucket" "storage" {
+  bucket = "cg-storage-bucket-1234"
+
+  tags = {
+    env = "sensitive-demo"
+  }
+}
+
+resource "aws_iam_user" "s3_user" {
+  name = "sensitive-demo-user"
+}
+
+resource "aws_iam_user_policy" "s3_access" {
+  name = "s3-access-policy"
+  user = aws_iam_user.s3_user.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
+        Resource = [
+          aws_s3_bucket.storage.arn,
+          "${aws_s3_bucket.storage.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_access_key" "s3_user_key" {
+  user = aws_iam_user.s3_user.name
+}
+
+
+
+4. outputs.tf — Sensitive Outputs
+
+Equivalent to a sensitive Azure storage-account-key output, we mark the AWS outputs as sensitive.
+
+output "bucket_name" {
+  value       = aws_s3_bucket.storage.bucket
+  description = "The S3 bucket name"
+  sensitive   = true
+}
+
+output "secret_access_key" {
+  value       = aws_iam_access_key.s3_user_key.secret
+  description = "IAM user secret access key"
+  sensitive   = true
+}
+
+
+
+5. Initialize & Apply
+terraform init
+terraform validate
+terraform plan
+terraform apply
+
+
+Output sample:
+
+Outputs:
+bucket_name        = <sensitive>
+secret_access_key  = <sensitive>
+
+
+
+6. View Sensitive Outputs (manually)
+terraform output bucket_name
+terraform output secret_access_key
+
+
+Or in JSON:
+
+terraform output -json secret_access_key
+

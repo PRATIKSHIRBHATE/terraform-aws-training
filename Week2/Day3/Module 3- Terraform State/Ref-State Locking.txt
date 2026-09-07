@@ -1,0 +1,6 @@
+https://medium.com/@ojranjankr/terraform-state-locking-using-s3-and-dynamodb-01f57fa7b9d3
+
+
+https://www.youtube.com/watch?v=q5-zsBY90j8&t=451s
+
+From 7:30 seconds

@@ -1,0 +1,130 @@
+
+https://medium.com/@mehmetodabashi/terraform-variable-usage-the-order-of-precedence-for-variable-sources-c91586ddb13f
+
+
+
+Input Variables - Variable Definition Precedence in Terraform:
+
+
+When working with Terraform, you can define input variables in several different ways, and there is a precedence order that Terraform follows to determine which value to use for each variable. Understanding this order is important because it ensures that the most specific value takes precedence over less specific ones.
+
+Here is a breakdown of how variable precedence works and the order in which Terraform selects the value for a given input variable.
+
+
+
+Precedence Order of Variable Definitions:
+
+
+Terraform evaluates variable values based on a specific order of precedence, from the most specific source to the least specific. The general precedence order is as follows:
+
+a.-var CLI argument (most specific)
+b. Environment variables
+c. terraform.tfvars file or *.auto.tfvars files
+d. -var-file CLI argument
+e. Default values in the variable definition
+
+
+
+Detailed Explanation of Each Precedence Level
+
+
+a.-var CLI Argument:
+
+If you pass a variable value using the -var flag in the terraform plan or terraform apply commands, it has the highest precedence.
+
+Example:
+terraform apply -var "instance_count=5"
+
+In this case, instance_count will be set to 5, regardless of any other values defined in files or environment variables.
+
+
+
+b. Environment Variables:
+
+Environment variables are the second most specific way to set a value for a Terraform variable. Terraform looks for environment variables in the format TF_VAR_<variable_name>. If a variable has a value set in an environment variable, Terraform will use it unless a more specific value is provided via the CLI or in the tfvars files.
+
+
+Example:
+
+export TF_VAR_instance_count=5
+
+terraform apply
+
+In this case, Terraform will use the value 5 for instance_count, as it was set via the environment variable.
+
+
+
+c. terraform.tfvars or *.auto.tfvars Files:
+
+If you define variables in a terraform.tfvars file or any *.auto.tfvars file, these values will be loaded and applied automatically, but they have lower precedence than the CLI or environment variables.
+These files are typically used to define default values for variables in a centralized location.
+
+Example (terraform.tfvars):
+instance_count = 3
+
+Here, the value 3 will be used for instance_count, but it can be overridden by either a CLI argument or an environment variable.
+
+
+
+d.-var-file CLI Argument:
+
+If you pass a variable file via the -var-file option in the terraform plan or terraform apply commands, its values will override any variables defined in the terraform.tfvars file or *.auto.tfvars files. However, it will still be overridden by the -var argument or environment variables.
+
+terraform apply -var-file="production.tfvars"
+
+In this case, Terraform will load the variables from production.tfvars, but this can still be overridden by variables passed with the -var argument.
+
+e.Default Values in the Variable Definition:
+
+Finally, if none of the other methods are used, Terraform will fall back to the default value specified in the variable definition. These values are only used if the variable is not explicitly set by one of the higher precedence methods.
+
+
+Example:
+
+variable "instance_count" {
+  description = "The number of EC2 instances to create"
+  type        = number
+  default     = 3
+}
+In this case, if no value is provided via any of the previous methods, Terraform will default to using 3 for instance_count.
+
+
+
+
+Example Scenario
+
+Let’s go through a scenario where we have multiple ways to set a variable and see how the precedence works:
+
+terraform.tfvars file:
+
+instance_count = 2
+
+
+Environment Variable:
+
+export TF_VAR_instance_count=4
+
+
+CLI Argument:
+
+terraform apply -var "instance_count=5"
+
+
+
+In this case, the following will happen:
+
+a. Terraform will use 5 for instance_count, because it was passed via the -var argument (highest precedence).
+b. The value in the environment variable (4) is ignored, as it's overridden by the CLI argument.
+c. The value in terraform.tfvars (2) is also ignored, as the CLI argument has higher precedence.
+
+Best Practices
+
+a. Use CLI Arguments (-var) for One-Off or Temporary Changes: This is the most explicit and immediate way to change the value of a variable for a specific run.
+
+b. Use Environment Variables for Sensitive Data: Sensitive values (e.g., AWS access keys, secret keys, database passwords) should be passed as environment variables, so they don’t appear in version control.
+
+c. Use tfvars Files for Consistency: Define values in .tfvars or *.auto.tfvars files for consistency across environments. This is especially helpful when working with a team or managing different AWS environments (e.g., dev.tfvars, prod.tfvars, targeting different AWS accounts or regions).
+
+d. Keep Default Values for Defaults: Default values in the variable definitions should be used as a fallback and should represent sensible defaults for your AWS infrastructure.
+
+

@@ -1,0 +1,176 @@
+
+Imperative commands:
+
+a.Run nginx deployment with 2 replicas:
+kubectl create deployment my-nginx --image=nginx --replicas=2 --port=80
+
+
+b.Scale deployment:
+
+kubectl scale deployment my-nginx --replicas=4
+
+https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment
+
+
+c.Finding API versions:
+
+kubectl explain deployment|grep VERSION
+kubectl explain replicaset|grep VERSION
+
+Lab 1:
+
+Ref:https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#creating-a-deployment
+
+1.Working with Deployment
+
+
+a.Create a YAML file named deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+      
+
+
+b.Create the Deployment by running the following command:
+kubectl apply -f deployment.yaml
+
+
+c.To see the Deployment rollout status, run 
+
+kubectl rollout status deployment/nginx-deployment
+
+The output is similar to:
+
+Waiting for rollout to finish: 2 out of 3 new replicas have been updated...
+deployment "nginx-deployment" successfully rolled out
+
+d.Run kubectl get deployments to check if the Deployment was created
+kubectl get deployments
+
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+nginx-deployment   3/3     3            3           18s
+
+
+e.To see the ReplicaSet (rs) created by the Deployment, run
+
+kubectl get rs
+
+NAME                          DESIRED   CURRENT   READY   AGE
+nginx-deployment-75675f5897   3         3         3       18s
+
+f.Check the pod details:
+
+To see the labels automatically generated for each Pod, run kubectl get pods --show-labels. The output is similar to:
+
+NAME                                READY     STATUS    RESTARTS   AGE       LABELS
+nginx-deployment-75675f5897-7ci7o   1/1       Running   0          18s       app=nginx,pod-template-hash=3123191453
+nginx-deployment-75675f5897-kzszj   1/1       Running   0          18s       app=nginx,pod-template-hash=3123191453
+nginx-deployment-75675f5897-qqcnn   1/1       Running   0 
+
+
+g.Scaling up deployment:
+kubectl scale deployment nginx-deployment --replicas=5
+kubectl get deploy
+NAME                          DESIRED   CURRENT   READY   AGE
+nginx-deployment-75675f5897   5        5         3       18s
+
+h.Check kubectl get pods
+NAME                                READY     STATUS    RESTARTS   AGE       LABELS
+nginx-deployment-75675f5897-7ci7o   1/1       Running   0          18s       app=nginx,pod-template-hash=3123191453
+nginx-deployment-75675f5897-kzszj   1/1       Running   0          18s       app=nginx,pod-template-hash=3123191453
+nginx-deployment-75675f5897-qqcnn   1/1       Running   0 
+nginx-deployment-75675f584347-7ci7o   1/1       Running   0          18s       app=nginx,pod-template-hash=3123191453
+nginx-deployment-75675f434897-7ci7o   1/1       Running   0          18s       app=nginx,pod-template-hash=3123191453
+
+
+i.Updating a Deployment
+
+Let's update the nginx Pods to use the nginx:1.16.1 image instead of the nginx:1.14.2 image
+
+kubectl set image deployment/nginx-deployment nginx=nginx:1.16.1 --record
+
+j.To see the rollout history, run:
+kubectl rollout history deployment.v1.apps/nginx-deployment
+
+The output is similar to this:
+
+deployments "nginx-deployment"
+REVISION    CHANGE-CAUSE
+1           kubectl apply --filename=https://k8s.io/examples/controllers/nginx-deployment.yaml --record=true
+2           kubectl set image deployment.v1.apps/nginx-deployment nginx=nginx:1.16.1 --record=true
+3           kubectl set image deployment.v1.apps/nginx-deployment n
+
+
+k.Checking rollout history of a specific revision
+
+kubectl rollout history deployment.v1.apps/nginx-deployment --revision=2
+
+deployments "nginx-deployment" revision 2
+  Labels:       app=nginx
+          pod-template-hash=1159050644
+  Annotations:  kubernetes.io/change-cause=kubectl set image deployment.v1.apps/nginx-deployment nginx=nginx:1.16.1 --record=true
+  Containers:
+   nginx:
+    Image:      nginx:1.16.1
+    Port:       80/TCP
+     QoS Tier:
+        cpu:      BestEffort
+        memory:   BestEffort
+    Environment Variables:      <none>
+  No volumes.
+
+
+l.Rolling Back to a Previous Revision
+
+Follow the steps given below to rollback the Deployment from the current version to the previous version
+
+Now you've decided to undo the current rollout and rollback to the previous revision:
+
+kubectl rollout undo deployment.v1.apps/nginx-deployment
+
+The output is similar to this:
+
+deployment.apps/nginx-deployment rolled back
+
+m. To Rollback to a specific Revision
+kubectl rollout undo deployment.v1.apps/nginx-deployment --to-revision=2
+
+n.Check if rolling back was successful
+
+kubectl get deployment nginx-deployment
+The output is similar to this:
+
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+nginx-deployment   3/3     3            3           30m
+
+Describe deployment and observe the image version
+
+
+n.Delete the deployment and observe the replicasets and pods would get deleted.
+
+kubectl delete deploy deployname
+
+
+
+Lab 2 - https://kubernetes.io/docs/tasks/run-application/run-stateless-application-deployment/
+
+

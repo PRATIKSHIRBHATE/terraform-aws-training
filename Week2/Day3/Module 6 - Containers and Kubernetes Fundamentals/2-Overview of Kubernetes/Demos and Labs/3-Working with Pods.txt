@@ -1,0 +1,71 @@
+
+Imperative commands:
+
+Creating pod:
+
+kubectl run podname --image=imagename
+eg: 
+
+kubectl run pod2 --image=nginx
+
+kubectl get pod pod2 -o yaml
+
+Finding Podid on master:
+
+kubectl get pods podname -o jsonpath='{.metadata.uid}'
+
+
+Creating Pods using Declarative :
+
+1.Creating a Simple Pod:
+
+Create a YAML(pod.yaml) for Pod 
+
+vi pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+
+$ kubectl create -f pod.yaml
+
+2.List the Pods
+$ kubectl get pods
+NAME    READY   STATUS    RESTARTS   AGE            
+nginx   1/1     Running   0          87s    
+
+3.List the Pods with additional detail to observe the ip address and Node detaile
+$ kubectl get pods -o wide
+NAME  READY   STATUS    RESTARTS   AGE    IP          NODE   
+nginx  1/1     Running   0          87s   10.0.0.04   worker-node1
+
+4.kubectl describe pod nginx
+
+4.Login to the Pod under bash shell and resolve the dns to allow internet traffic
+
+kubectl exec -it nginx  -- bash
+echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+apt-get update
+apt-get install vim
+
+5.Delete the pods and observe the results 
+
+Delete Single Pod:
+$ kubectl delete pod podname
+$ kubectl delete pod nginx
+
+6.You can also delete multiple pods at once
+
+Delete all the pods:
+
+$ kubectl delete pods --all
+
+
+Ref:https://kubernetes.io/docs/tasks/configure-pod-container/attach-handler-lifecycle-event/

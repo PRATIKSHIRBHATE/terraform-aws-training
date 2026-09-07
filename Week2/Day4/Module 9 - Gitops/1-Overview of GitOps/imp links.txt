@@ -1,0 +1,13 @@
+
+What is GitOps?
+
+https://www.youtube.com/watch?v=f5EpcWp0THw&t=526s
+
+
+https://about.gitlab.com/topics/gitops/
+
+
+Working of GitOps
+
+
+https://about.gitlab.com/solutions/gitops/

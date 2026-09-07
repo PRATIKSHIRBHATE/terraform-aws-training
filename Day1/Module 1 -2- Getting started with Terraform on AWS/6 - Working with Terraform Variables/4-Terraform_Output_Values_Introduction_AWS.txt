@@ -1,0 +1,84 @@
+### Terraform Output Values Introduction
+
+
+a.Terraform Output Values Introduction
+
+In Terraform, output values are used to display information about the infrastructure after the terraform apply operation. Output values allow you to expose specific information about the resources that Terraform has created or modified, such as IP addresses, IDs, or any other important attributes that you may need for further configuration or integration.
+
+
+
+b.Output values can be used to:
+
+1.Display resource attributes after Terraform applies changes.
+2.Share values between different modules.
+3.Help in debugging and monitoring Terraform configurations.
+
+
+
+c.Purpose of Output Values
+
+1.Show Key Information: After provisioning AWS infrastructure, you might want to display important details (like an EC2 instance's public IP address, instance ID, etc.) that can be used in subsequent steps.
+
+2.Pass Information Between Modules: Outputs can be used to pass data from one module to another in a Terraform configuration.
+
+3.Integration with External Tools: Outputs can be used to feed information into other systems or tools, such as a CI/CD pipeline, monitoring systems, or other infrastructure automation tools.
+
+
+
+d.Syntax of Output Values
+The basic syntax for defining output values in Terraform is as follows:
+
+output "<output_name>" {
+  value = <expression>
+  description = "Optional: Description of the output value"
+  sensitive = true | false   # Optional, if the value contains sensitive data (e.g., passwords)
+}
+
+output_name: The name of the output value, which can be referenced later.
+value: The value or expression that will be returned as the output. This could be a resource attribute, a local variable, or any valid Terraform expression.
+description (optional): A description to explain what the output represents.
+sensitive (optional): If set to true, this will prevent Terraform from displaying the value in the output on the console or in the plan. This is typically used for sensitive data like passwords.
+
+
+Example: Defining an Output for an AWS EC2 Instance
+
+resource "aws_instance" "web" {
+  ami           = "ami-0c101f26f147fa7fd"
+  instance_type = "t2.micro"
+}
+
+output "ec2_public_ip" {
+  value       = aws_instance.web.public_ip
+  description = "The public IP address of the EC2 instance"
+}
+
+
+e.Using terraform output Command:
+
+You can use the terraform output command to view the output values after applying your configuration.
+
+Example:
+terraform output ec2_public_ip
+This will display the value of the ec2_public_ip output.
+
+
+
+g.Using Outputs in Other Configurations or Scripts:
+
+You can reference outputs in other Terraform configurations or pass them into scripts or automation tools.
+
+Example:
+
+output_value=$(terraform output -raw ec2_public_ip)
+echo "The public IP address is: $output_value"
+
+
+h.Using terraform output Command Options
+terraform output: Displays all output values.
+terraform output <output_name>: Displays the specific output value by name.
+terraform output -json: Outputs all the values in JSON format, which is useful for programmatic consumption.
+
+Example:
+
+terraform output -json
+

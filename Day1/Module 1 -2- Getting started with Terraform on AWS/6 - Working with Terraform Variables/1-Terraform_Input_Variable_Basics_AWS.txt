@@ -1,0 +1,259 @@
+https://developer.hashicorp.com/terraform/language/values/variables
+
+
+
+1. What Are Input Variables
+
+Input variables in Terraform allow you to avoid hardcoding values like:
+
+1.AMI Ids
+
+2.AWS region
+
+3.EC2 size
+
+4.VPC CIDR values
+
+5.Tags
+
+Instead, you parameterize the configuration and pass values dynamically.
+
+
+
+
+2. Why Use Input Variables in AWS?
+✔ Reusability
+
+Same Terraform code can build:
+
+1.dev
+2.test
+3.prod
+(by simply changing variable values)
+
+✔ Flexibility
+
+
+
+Easily change:
+
+1.AWS region
+2.EC2 instance type
+3.Number of instances
+
+
+
+✔ Cleaner Code
+
+Reduces duplication, makes AWS infrastructure modular.
+
+
+
+
+
+3. Declaring Input Variables (AWS Example)
+
+Example: Declare AWS variables
+
+variable "region" {
+  description = "AWS Region"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "instance_type" {
+  description = "AWS EC2 instance type"
+  type        = string
+  default     = "t2.micro"
+}
+
+variable "ami_id" {
+  description = "AMI ID for the EC2 instance"
+  type        = string
+}
+
+
+
+
+
+4. Using Variables in AWS Resources
+
+Example: using the above variables
+
+provider "aws" {
+  region = var.region
+}
+
+resource "aws_instance" "web" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+}
+
+
+
+
+
+5. Providing Values to AWS Input Variables
+
+
+a) Using -var flag
+terraform apply -var="ami_id=ami-0c101f26f147fa7fd"
+
+
+b) Using terraform.tfvars file
+
+terraform.tfvars
+ami_id        = "ami-0c101f26f147fa7fd"
+region        = "us-west-2"
+instance_type = "t2.small"
+
+
+Then run:
+
+terraform apply
+
+
+
+c) Using Environment Variables
+
+Set like this:
+
+export TF_VAR_ami_id="ami-0c101f26f147fa7fd"
+export TF_VAR_region="us-west-2"
+
+
+Terraform automatically picks them.
+
+
+
+
+d) Using Default Values
+
+If variable has a default, Terraform automatically uses it.
+
+
+
+
+6. AWS Variable Types Examples
+
+String
+
+variable "region" {
+  type    = string
+  default = "us-east-1"
+}
+
+
+Number
+
+variable "instance_count" {
+  type = number
+}
+
+
+Boolean
+
+variable "enable_monitoring" {
+  type    = bool
+  default = false
+}
+
+
+
+List
+
+Example: AWS Availability Zones list
+
+variable "availability_zones" {
+  type    = list(string)
+  default = ["us-east-1a", "us-east-1b"]
+}
+
+
+
+
+Map
+
+Useful for AWS tags.
+
+variable "tags" {
+  type = map(string)
+  default = {
+    environment = "dev"
+    owner       = "admin"
+  }
+}
+
+
+Use in resource:
+
+tags = var.tags
+
+
+
+
+Object
+
+Example: EC2 instance configuration object
+
+variable "instance_config" {
+  type = object({
+    instance_type = string
+    ami           = string
+  })
+
+  default = {
+    instance_type = "t2.micro"
+    ami           = "ami-0c101f26f147fa7fd"
+  }
+}
+
+
+Use:
+
+instance_type = var.instance_config.instance_type
+ami           = var.instance_config.ami
+
+
+
+
+7. Complete AWS Example Using Variables
+
+
+variable "region" {
+  default = "us-east-1"
+}
+
+variable "ami_id" {
+  default = "ami-0c101f26f147fa7fd"
+}
+
+variable "instance_type" {
+  default = "t2.micro"
+}
+
+provider "aws" {
+  region = var.region
+}
+
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+}
+
+resource "aws_instance" "web" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+}
+
+
+
+
+Conclusion
+
+Input variables are one of the most powerful features in Terraform, as they allow you to create flexible, reusable, and maintainable infrastructure code. By avoiding hardcoding and parameterizing the configuration, you can customize your Terraform configurations based on the needs of different environments or use cases.
+
+Reuse: Reuse the same Terraform code in different environments by providing different variable values.
+
+Customization: Input variables enable you to customize infrastructure configurations without changing the core code.
+
+Flexibility: By using input variables, you ensure that Terraform configurations can be easily adjusted, making them suitable for a wide range of deployment scenarios.

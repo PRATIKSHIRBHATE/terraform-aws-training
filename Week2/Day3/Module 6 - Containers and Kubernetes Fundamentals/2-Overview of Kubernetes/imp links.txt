@@ -1,0 +1,15 @@
+https://kubernetes.io
+
+https://kubernetes.io/docs/reference/kubectl/cheatsheet/
+
+
+API:
+https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#cronjob-v1-batch
+
+
+Add a new node at any point of time:
+
+Run the below command on the master :
+
+kubeadm token create --print-join-command
+

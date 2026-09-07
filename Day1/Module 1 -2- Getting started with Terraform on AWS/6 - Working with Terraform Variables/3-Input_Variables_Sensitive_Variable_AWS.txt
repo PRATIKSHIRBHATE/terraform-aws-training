@@ -1,0 +1,105 @@
+https://developer.hashicorp.com/terraform/tutorials/configuration-language/sensitive-variables
+
+
+
+Input Variables - Sensitive Variables in Terraform :
+
+
+In Terraform, sensitive variables are those that contain sensitive data, such as passwords, API keys, tokens, or private keys. Terraform provides a way to mark variables as sensitive to ensure that they are handled securely and do not inadvertently get exposed in logs, plans, or state files.
+
+Marking a variable as sensitive ensures that its values will be masked in Terraform's outputs, logs, and state files, reducing the risk of accidental exposure. This is especially relevant in AWS configurations, where variables often hold values like RDS database passwords, AWS secret access keys, or EC2 key pair material.
+
+
+1.Why Use Sensitive Variables?
+
+
+Sensitive variables are important for the following reasons:
+
+a. Security: They ensure that sensitive data (like RDS passwords or AWS access keys) is not exposed in Terraform outputs, state files, or logs.
+
+b. State File Protection: Sensitive data in the state file can be encrypted and masked to avoid leakage.
+
+c. Masking in Outputs: Terraform automatically masks sensitive variables when they're used in outputs or as part of plans.
+
+d. Marking a Variable as Sensitive
+
+You can mark a variable as sensitive by setting the sensitive = true argument inside the variable definition. This ensures that any value assigned to this variable is treated as sensitive, regardless of its actual content.
+
+
+
+
+2.Example of Defining Sensitive Variables:
+
+variable "db_password" {
+  description = "The master password for the AWS RDS database instance"
+  type        = string
+  sensitive   = true
+}
+
+In this example, the db_password variable is marked as sensitive, meaning its value will be protected and not shown in Terraform's plan or output.
+
+
+
+
+
+3.Using Sensitive Variables
+
+Sensitive variables can be set using any of the available methods for passing input variables, such as:
+
+a. CLI prompts
+b. Command-line arguments (e.g., -var flag)
+c. Environment variables
+d. .tfvars files
+
+However, it’s important to make sure you don’t accidentally expose the sensitive values through unprotected files or logs.
+
+Example: Setting a Sensitive Variable Using -var
+
+terraform apply -var 'db_password=secretpassword'
+
+When you run the terraform apply command with the -var flag, Terraform will receive the db_password value but will mask it during the process.
+
+Example: Using the Variable in an AWS RDS Resource
+
+resource "aws_db_instance" "main" {
+  identifier        = "app-db"
+  engine            = "mysql"
+  instance_class    = "db.t3.micro"
+  allocated_storage = 20
+  username          = "admin"
+  password          = var.db_password
+  skip_final_snapshot = true
+}
+
+Because db_password is marked sensitive, Terraform will not print its value in the plan output when this resource is created or updated.
+
+
+
+
+
+
+4.Sensitive Variables in Outputs
+
+When you use a sensitive variable in an output, Terraform will mask the value by default to prevent accidental exposure in the output logs.
+
+Example of Outputting a Sensitive Variable:
+
+output "db_password_output" {
+  value     = var.db_password
+  sensitive = true
+}
+
+In this example, even if the db_password is part of the output, it will be masked in the output (not shown in plain text) when you run terraform apply or terraform output.
+
+Example of Masked Output:
+
+$ terraform output db_password_output
+<redacted>
+The output will show <redacted> instead of the actual password.
+
+
+
+5.Note on AWS Credentials
+
+Sensitive marking protects values within Terraform's own output, plan, and state handling, but it is not a substitute for proper AWS credential management. AWS access keys, secret keys, and RDS passwords should still be sourced from a secure location (such as environment variables, AWS Secrets Manager, or a secrets-managed .tfvars file excluded from version control) rather than hardcoded directly into .tf files.
+

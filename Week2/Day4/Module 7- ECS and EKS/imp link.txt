@@ -1,0 +1,10 @@
+Comparison of Orchestration Services :
+
+https://www.youtube.com/watch?v=HoXEyXIf6_U
+
+
+https://aws.amazon.com/eks
+
+Amazon EKS Explained:
+
+https://youtu.be/E956xeOt050
