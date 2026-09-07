@@ -10,15 +10,19 @@ provider "aws" {
   profile = "default"
 }
 
-# Temporarily commented out to test S3 module only
-# resource "aws_instance" "app_server" {
-#   ami           = "ami-01a00762f46d584a1"
-#   instance_type = "t2.micro"
-#
-#   tags = {
-#     Name = "PSRemoteStateInstance"
-#   }
-# }
+module "ec2" {
+  source = "./modules/ec2"
+
+  name          = "PSRemoteStateInstance"
+  ami           = "ami-01a00762f46d584a1"
+  instance_type = "t2.micro"
+
+  tags = {
+    Name        = "PSRemoteStateInstance"
+    ManagedBy   = "Terraform"
+    Environment = "dev"
+  }
+}
 
 module "s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
@@ -41,16 +45,15 @@ module "s3_bucket" {
   }
 }
 
-# Temporarily commented out to test S3 module only
-# output "instance_id" {
-#   description = "ID of the EC2 instance"
-#   value       = aws_instance.app_server.id
-# }
-#
-# output "instance_public_ip" {
-#   description = "Public IP address of the EC2 instance"
-#   value       = aws_instance.app_server.public_ip
-# }
+output "instance_id" {
+  description = "ID of the EC2 instance"
+  value       = module.ec2.instance_id
+}
+
+output "instance_public_ip" {
+  description = "Public IP address of the EC2 instance"
+  value       = module.ec2.public_ip
+}
 
 output "s3_bucket_id" {
   description = "The name of the S3 bucket created by the module"
