@@ -14,8 +14,8 @@ This project uses an S3 bucket as the Terraform remote backend for storing state
 terraform {
   backend "s3" {
     bucket = "terraform-aws-pratik-backend-bucket"
-    key    = "path/to/terraform.tfstate"
-    region = "us-east-1"
+    key    = "terraform/remotestate"
+    region = "ap-south-1"
   }
 }
 ```
