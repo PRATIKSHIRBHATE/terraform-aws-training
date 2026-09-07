@@ -1,0 +1,30 @@
+# Microsoft Office temporary/lock files
+# Created automatically when a Word/PowerPoint/Excel doc is open
+~$*
+*.tmp
+
+# Terraform
+# Local .terraform directories and provider plugins
+**/.terraform/*
+.terraform.lock.hcl
+
+# State files (may contain sensitive data)
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Variable files that can hold secrets
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Plan output files
+*.tfplan
+
+# OS-generated files
+.DS_Store
+Thumbs.db
