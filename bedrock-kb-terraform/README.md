@@ -50,7 +50,7 @@ bedrock-kb-terraform/
 +-- variables.tf         # Input variables (region, project name)
 +-- s3.tf                # S3 bucket, security settings, sample documents
 +-- iam.tf               # IAM role and policy for Bedrock
-+-- opensearch.tf        # OpenSearch Serverless policies and collection
++-- opensearch.tf        # OpenSearch Serverless policies, collection, vector index
 +-- knowledge-base.tf    # Bedrock Knowledge Base
 +-- data-source.tf       # S3 data source for the Knowledge Base
 +-- outputs.tf           # Useful outputs (IDs, ARNs, bucket name)
@@ -82,8 +82,21 @@ aws sts get-caller-identity
 
 ## Region
 
-This project defaults to `us-east-1`. You can change it via the `aws_region` variable,
+This project defaults to `ap-south-1`. You can change it via the `aws_region` variable,
 but make sure the embedding model and OpenSearch Serverless are available in that region.
+
+## Vector index
+
+A Bedrock Knowledge Base requires the vector index to **already exist** in the
+OpenSearch Serverless collection before it is created. Creating the collection does not
+create an index, so `opensearch.tf` creates the `bedrock-knowledge-base-index` index
+(1024 dimensions for Titan Text Embeddings V2) using the `opensearch` provider, and the
+Knowledge Base depends on it.
+
+This also means Terraform uses three providers: `aws`, `opensearch` (to create the
+index), and `time` (short waits so OpenSearch Serverless data-access permissions
+propagate before the index and Knowledge Base are created). `terraform init` installs
+all three.
 
 ## Deploy
 
@@ -96,12 +109,61 @@ terraform apply   # enter: yes
 ```
 
 > OpenSearch Serverless and the Knowledge Base can take several minutes to finish creating.
+> The configuration includes short deliberate waits (~90s total) so data-access
+> permissions propagate before the index and Knowledge Base are created.
 
 Check the outputs:
 
 ```bash
 terraform output
 ```
+
+## Verify in the AWS Console
+
+After `terraform apply` succeeds, confirm the resources were created correctly in the
+AWS Console. Make sure the console region (top-right) is set to the same region as your
+deployment (`ap-south-1` by default).
+
+### 1. S3 bucket and documents
+
+- Go to **S3** > open the bucket named `bedrock-kb-lab-documents-...`.
+- Confirm the three objects exist: `aws.txt`, `terraform.txt`, `bedrock.txt`.
+- **Properties** tab: **Bucket Versioning** shows `Enabled`.
+- **Permissions** tab: **Block all public access** is `On`.
+
+### 2. IAM role and policy
+
+- Go to **IAM** > **Roles** > open `bedrock-kb-lab-role`.
+- **Trust relationships**: the trusted entity is `bedrock.amazonaws.com`.
+- **Permissions**: an inline policy `bedrock-kb-lab-policy` is attached, granting S3
+  read, `bedrock:InvokeModel`, and `aoss:APIAccessAll`.
+
+### 3. OpenSearch Serverless collection
+
+- Go to **Amazon OpenSearch Service** > **Serverless** > **Collections**.
+- Open `bedrock-kb-lab-collection` and confirm:
+  - **Status** is `Active` (it can take a few minutes to move from `Creating`).
+  - **Type** is `Vector search`.
+- Under **Security policies**, confirm the encryption, network, and data access policies
+  exist (`bedrock-kb-lab-encryption`, `bedrock-kb-lab-network`, `bedrock-kb-lab-access`).
+
+### 4. Bedrock Knowledge Base
+
+- Go to **Amazon Bedrock** > **Knowledge Bases** > open `bedrock-kb-lab-kb`.
+- Confirm:
+  - **Status** is `Ready`.
+  - **Service role** is `bedrock-kb-lab-role`.
+  - **Embeddings model** is `Titan Text Embeddings V2` (`amazon.titan-embed-text-v2:0`).
+  - **Vector store** points to the OpenSearch Serverless collection above.
+- Under **Data source**, confirm `bedrock-kb-lab-datasource` exists and points to the
+  S3 bucket. Its **sync status** will show as never synced / `Available` until you run
+  the ingestion job (see below) — the initial `apply` does not ingest documents.
+
+### 5. Model access
+
+- Go to **Amazon Bedrock** > **Model access** and confirm `Titan Text Embeddings V2`
+  is `Access granted`. If it is not, the ingestion job will fail with a model access
+  error.
 
 ## Load and Test the Knowledge Base
 
@@ -122,7 +184,7 @@ Expected: `aws.txt`, `bedrock.txt`, `terraform.txt`
 aws bedrock-agent start-ingestion-job \
   --knowledge-base-id $(terraform output -raw knowledge_base_id) \
   --data-source-id $(terraform output -raw data_source_id) \
-  --region us-east-1
+  --region ap-south-1
 ```
 
 Check its status and wait until it shows `COMPLETE`:
@@ -131,7 +193,7 @@ Check its status and wait until it shows `COMPLETE`:
 aws bedrock-agent list-ingestion-jobs \
   --knowledge-base-id $(terraform output -raw knowledge_base_id) \
   --data-source-id $(terraform output -raw data_source_id) \
-  --region us-east-1
+  --region ap-south-1
 ```
 
 ### 3. Test retrieval
@@ -141,7 +203,7 @@ aws bedrock-agent-runtime retrieve \
   --knowledge-base-id $(terraform output -raw knowledge_base_id) \
   --retrieval-configuration '{"vectorSearchConfiguration": {"numberOfResults": 5}}' \
   --retrieval-query '{"text": "What is Terraform?"}' \
-  --region us-east-1
+  --region ap-south-1
 ```
 
 ### 4. Test retrieve-and-generate
@@ -158,7 +220,7 @@ aws bedrock-agent-runtime retrieve-and-generate \
       "modelArn": "YOUR_MODEL_ARN"
     }
   }' \
-  --region us-east-1
+  --region ap-south-1
 ```
 
 ## Outputs

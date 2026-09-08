@@ -5,6 +5,14 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.0"
     }
+    opensearch = {
+      source  = "opensearch-project/opensearch"
+      version = "~> 2.2"
+    }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.11"
+    }
   }
 }
 
@@ -17,4 +25,14 @@ provider "aws" {
       ManagedBy   = "Terraform"
     }
   }
+}
+
+# Signs requests to the OpenSearch Serverless data plane so Terraform can
+# create the vector index inside the collection. OpenSearch Serverless requires
+# SigV4-signed requests against the "aoss" service.
+provider "opensearch" {
+  url               = aws_opensearchserverless_collection.vector.collection_endpoint
+  healthcheck       = false
+  aws_region        = var.aws_region
+  sign_aws_requests = true
 }
