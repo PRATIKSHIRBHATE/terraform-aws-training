@@ -17,6 +17,8 @@ crash.*.log
 # Variable files that can hold secrets
 *.tfvars
 *.tfvars.json
+# Exception: ECS Fargate lab uses only non-sensitive defaults
+!ecs-fargate-terraform/terraform.tfvars
 override.tf
 override.tf.json
 *_override.tf
