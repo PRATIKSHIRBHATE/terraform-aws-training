@@ -1,0 +1,4 @@
+Amazon Bedrock provides access to foundation models
+and services for building generative AI applications.
+Knowledge Bases for Amazon Bedrock can be used to
+implement retrieval augmented generation applications.
